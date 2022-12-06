@@ -1,0 +1,51 @@
+##jika docker image diibaratkan seperti installer, maka container adalah aplikasinya
+##saat membuat container, secara default container tersebut tidak akan berjalan
+
+##list all containers
+docker container ls -a
+
+atau 
+
+docker ps -a
+
+##list all running container
+docker container ls
+
+atau
+
+docker ps
+
+##display container description
+docker container inspect contohredis
+
+##create container
+docker container create --name contohredis redis:latest
+
+##running container
+docker container start contohredis
+
+##stop container
+docker container stop contohredis
+
+##delete container
+docker container rm contohredis
+
+##delete all container
+docker container rm $(docker ps -aq)
+
+##delete all container that are not runing
+docker container prune
+
+##stop all container 
+docker container stop $(docker ps -aq)
+
+##restart container
+docker container restart contohredis
+
+##container log 
+docker container logs contohredis
+
+##container log real-time
+docker container logs -f contohredis
+
+

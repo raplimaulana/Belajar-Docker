@@ -1,0 +1,95 @@
+### VOLUME ###
+Volume seperti hardisk kosong yang akan disimpan oleh container.
+Pada bind mounts data disimpan pada host, sedangkan pada volume data di manage oleh docker.  
+Jika container dihapus, data akan tetap aman di dalam volume.
+
+##list all volumes
+docker volume ls
+
+##create volume
+docker volume create mongodata
+
+##delete volume
+docker volume rm mongodata
+
+##delete anonymous volumes
+docker run --rm -v /foo -v awesome:/bar busybox top
+
+##delete all volumes
+docker volume prune
+
+
+
+### CONTAINER VOLUME ###
+#create volume
+docker volume create mongodata
+
+#create container with volume
+docker container create --name mongovolume --mount "type=volume,source=mongodata,destination=/data/db" --publish 27109:27107 --env MONGO_INITDB_ROOT_USERNAME:rapli --env MONGO_INITDB_ROOT_PASSWORD:rapli123 mongo:latest
+
+*untuk lokasi destination, check data directory dari images yang digunakan pada docker repository
+
+#start container
+docker container start mongodata
+
+
+
+### BACKUP VOLUME KE LOCAL###
+#cara manual
+1. Stop container yang menggunakan volume yang ingin di backup.
+docker container stop mongovolume
+
+2. Buat folder baru untuk lokasi backup volume 
+mkdir /home/raplimaulana/backup-mongovolume
+
+3. Buat container baru dengan dua mount, volume yang ingin kita backup dan bind mount folder dari systm host (laptop).
+docker container create --name nginxbackup --mount "type=bind,source=/home/raplimaulana/backup-mongovolume,destination=/backup" --mount "type=volume,source=mongodata,destination=/data" nginx:latest
+docker container start nginxbackup
+
+*Destination ada di dalam volume. Misal isi database mongodb ada di folder /data. Untuk /nackup berisi folder kosong yang baru dibuat untuk nanti digunakan sebagai backup folder /data. 
+
+3. Lakukan backup menggunakan container dengan cara meng-archive isi volume dan simpan di bind mount folder.
+docker container exec -i -t nginxbackup /bin/bash
+tar cvf /backup/backup.tar.gz /data
+
+4. Isi container yang kita gunakan untuk melakukn backup.
+docker container stop nginxbackup 
+docker container rm nginxbackup
+
+#cara simple
+docker container stop mongovolume
+docker container run --rm --name ubuntu --mount "type=bind,source=/Users/rppl/backup-mongovolume,destination=/backup" --mount "type=volume,source=mongodata,destination=/data" nginx:latest tar cvf /backup/backup.tar.gz /data
+ 
+
+
+### RESTORE VOLUME ###
+Membuat volume baru menggunakan isi data dari volume lama.
+
+1. Buat volume baru untuk di restore.
+docker volume create mongorestore
+
+2. Buat container baru dengan dua mount, volume baru untuk restore backup dan bind mount folder dari system host (laptop) yang berisi file backup.
+3. Lakukan restore dengan cara melakukan extract isi backup file ke dalam volume.
+4. Isi file backup sekarang yang sudah di restore ke volume.
+5. Delete container yang kita gunakan untuk melakukan restore.
+docker container run --rm --name ubunturestore --mount "type=bind,source=/Users/rppl/backup-mongovolume,destination=/backup" --mount "type=volume,source=monngorestore,destination=/data" nginx:latest bash -c "cd /data && tar xvf /backup/backup.tar.gz --strip 1"
+ 
+
+6. Volume baru berisi data backup siap digunakan.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

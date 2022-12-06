@@ -1,0 +1,13 @@
+##saat membuat aplikasi, menggunakan enviroment variable adalah salah satu teknik agar konfigurasi aplikasi bisa diubah secara dinamis
+##dengan menggunakan environment variable, kita bisa mengubah kongigurasi aplikasi, tanpa harus mengubah kode aplikasinya lagi
+
+##menambah environment variable pada saat membuat container
+docker container create --name contohmongo --publish 27107:27107 --env MONGO_INITDB_ROOT_USERNAME:rapli --env MONGO_INITDB_ROOT_PASSWORD:rapli123 mongo:latest
+
+*lihat deskripsi environment image yang digunakan pada docker repository
+
+*27107 = port bebas untuk akses dari laptop
+ 27107 = port yang digunakan oleh aplikasi nginx 
+
+#akses via aplikasi mongodb client
+localhost:27017

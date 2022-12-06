@@ -1,0 +1,5 @@
+##container exec digunakan untuk mengeksekusi kode program di dalam container (masuk ke dalam container)
+
+##masuk ke container
+docker container exec -i -t contohredis /bin/bash
+

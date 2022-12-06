@@ -1,0 +1,12 @@
+##saat menjalankan container, container tersebut terisolasi di dalam doker
+##artinya system host(laptop kita) tidak bisa langsung mengakses langsung aplikasi yang ada di dalam container (harus lewat container exec)
+##solusi lain adalah menerapkan port forwarding, agar laptop bisa mengakses aplikasi secara langsung
+
+##harus dijalankan pada saat membuat container, jika terlanjur sudah ada, harus buat ulang dengan publish port forwarding
+docker container create --name contohnginx --publish (atau -p) 8080:80 nginx:latest
+
+*8080 = port bebas untuk akses dari laptop
+ 80   = port yang digunakan oleh aplikasi nginx 
+
+#akses via browser 
+http://localhost:8080

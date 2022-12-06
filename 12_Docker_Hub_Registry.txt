@@ -1,0 +1,22 @@
+### DOCKER HUB REGISTRY ###
+Setelah membuat image di local, kita bisa mengupload image tersebut ke Docker Registry seperti Docker Hub dan Digital Ocean.
+
+
+##login account Docker Hub 
+#get Docker Hub acces token
+token digunakan untuk login ke docker hub (pengganti passwordnya)
+
+1. buka web hub.docker.com > login > username_account > account setting > security > new acces token > tentukan deskripsi dan access perimission-nya > generate.
+
+2. copy link token. 
+
+3. ketikkan perintah "docker login -u raplimaulana" di terminal > paste link token.
+
+##simpan docker image ke Docker Hub
+docker image push raplimaulana/multi:1.1                             #image aslinya adalah raplimaulana/multi
+
+##ganti versi image
+docker image tag raplimaulana/multi:1.1 raplimaulana/multi:1.2
+
+
+

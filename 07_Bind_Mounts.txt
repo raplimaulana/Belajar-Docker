@@ -1,0 +1,23 @@
+##bid mounts merupakan kemampuan melakukan mounting / sharing file maupun folder yang terdapat di system host (laptop) ke container yang terdapat di docker
+##jika file atau folder tidak ada di laptop, secara otomatis akan dibuat oleh docker
+
+Parameter mount
+------------|------------------------------------------------------------------------------------------|
+ PARAMETER  |              Keterangan                                                                  | 
+------------|------------------------------------------------------------------------------------------|
+type        | Tipe mount, bind atau volume.                                                            |
+------------|------------------------------------------------------------------------------------------|
+source      | Lokasi file atau folder di laptop                                                        |
+------------|------------------------------------------------------------------------------------------|
+destination | Lokasi file atau folder di container.                                                    |
+------------|------------------------------------------------------------------------------------------|
+readonly    | Jika ada, maka file atau foldernya hanya bisa dibaca dicontainer dan tidak bisa ditulis. |
+            | Biasanya digunakan untuk menyimpan file konfiguari agar tidak bisa dirubah atau diedit.  |
+------------|------------------------------------------------------------------------------------------|
+
+##melakukan mounting folder laptop
+docker container --name mongodata --mount "type=bind,source=/home/raplimaulana,destination=/data/db" --publish 27107:27107 --env MONGO_INITDB_ROOT_USERNAME:rapli --env MONGO_INITDB_ROOT_PASSWORD:rapli123 mongo:latest
+
+*untuk lokasi source, check dengan pwd jika menggunakan wsl
+*untuk lokasi destination, check data directory dari images yang digunakan pada docker repository
+

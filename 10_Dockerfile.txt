@@ -1,0 +1,203 @@
+### DOCKERFILE ###
+Sebuah file yang berisi perintah-perintah untuk membuat docker images.
+
+##docker build
+Perintah docker build digunakan untuk membuat docker image dari Dockerfile.
+
+
+docker build -t raplima/app:1.0.0 Dockerfile
+docker build -t raplima/app:1.0.0 .
+docker build -t raplima/app:1.0.0 raplima/app:latest Dockerfile        #membuat 2 docker image sekaligus
+
+*jika tidak diberu tag (1.0.0), secara otomatis akan diisi "latest" oleh system
+
+
+
+### DOCKERFILE FORMAT ###
+1. file harus bernama "Dockerfile".
+2. Perintah (INSTRUCTION) di Dockerfile, disarankan menggunakan huruf besar semua:
+   - FROM             : Membuat build stage (pembuatan image) dari image yang kita tentukan.
+
+                        FROM alpine:3
+   
+   - RUN              : Intruksi untuk mengeksekusi perintah di dalam image pada saat build stage.
+                        Perintah RUN hanya dieksekusi pada saat proses docker build saja, setelah menjadi docker image, perintah tersebut tidak akan dijalankan lagi.
+                        Contohnya untuk melakukan instalasi aplikasi tambahan pada image yang akan kita buat, membuat folder, dll. 
+
+                        RUN mkdir hello
+                        RUN echo "Hello World" > "hello/world.txt
+                        RUN cat hello/world.txt
+                        RUN apk add --update nginx && rm -rf /var/cache/apk/* && mkdir -p /tmp/nginx/
+
+
+                        *Secara default, di docker terbaru tidak akan menampilkan tulisan detail dari build-nya.
+                         Jika ingin menampilkan detailnya, gunakan perintah --progress=plain.
+             
+                        *Secara default docker build melakukan cache. 
+                         Cache digunakan ketika user melakukan build image menggunakan image yang sama dengan image sebelumnya di build (dengan syarat tidak ada perubahan perintah pada Dockerfile).
+                         Jika ingin menonaktifkannya, gunakan perintah --no-cache.
+
+   - CMD              : Intruksi yang digunakan ketika Docker Container berjalan. 
+                        CMD tidak akan dijalankan ketika proses build, namun dijalankan ketika Docker Container berjalan.
+                        Dalam Dockerfile, tidak bisa memmbuat lebih dari satu intruksi CMD. Jika terdapat lebih dari satu, Docker Container hanya akan menjalankan intruksi CMD yang terakhir.
+ 
+                        CMD cat hello/world.txt    
+
+                        #CMD juga dapat digunakan pada saat menjalankan container
+                        docker container run --name nginx-version dockerfile-example nginx -v    #setara nginx -v          
+               
+   - LABEL            : Intruksi untuk menambahkan metadata ke dalam Docker image yang kita buat.
+                        Metadata adalah informasi tambahan, misal seperti nama aplikasi, pembuat, website, perusahaan, lisensi, dll.
+                        Metadata hanya berguna sebagai informasi saja, tidak akan digunakan ketika kita menjalankan Docker Container.
+                   
+                        LABEL author="Rapli Maulana Aji"
+                        LABEL company="Toko Hidayat" website="https://www.tokohidayat.com"
+   
+   - ADD              : Intruksi untuk menambahkan file dari source ke dalam folder destination di Docker Image. Bisa dari laptop system host atau berupa link url.
+                        Perintah ADD bisa mendeteksi apakah sebuah file source merupakan file compress seperti tar.gz, gzip, dll. Jika terdeteksi sebagai file compress, maka akan secara otomatis di extract ke dalam folder destination
+                        Perintah ADD bisa digunakan untuk melakukan banyak penambahan file sekaligus pada sebuah folder. #https://pkg.go.dev/path/filepath/Match 
+
+                        ADD world.txt hello    #Menambah file world.txt ke folder hello di images yang akan dibuat. Lokasi fle world.txt terletak sejajar dengan letak file Dockerfile disimpan.
+                        ADD *.txt hello        #Menambah semua file berekstensi .txt ke folder hello di images yang akan dibuat. Lokasi fle berekstensi .txt terletak sejajar dengan letak file Dockerfile disimpan.
+                        ADD text/*.txt hello
+   
+   - COPY             : Mirip dengan ADD, digunakan untuk menambahkan file dari source ke dalam folder destination di Docker Image.
+                        Bedanya COPY hanya bisa melakukan copy file saja, berbeda dengan ADD yang bisa mendownload melalui link url dan secara otomatis melakukan extract file compress.
+   
+   .dockerignore file : Saat melakukan perintah ADD atau COPY dari file source, pertama Docker akan membaca file yang bernama .dockerignore.
+                        File .dockerignore ini seperti file .gitignore, dimana kita bisa menyebutkan file-file apa saja yang ingin kita ignore (hiraukan).
+                        Artinya jika ada file yang kita sebut di dalam file .dockerignore, secara otomatis file tersebut tidak akan di ADD atau di COPY.
+                        File .dockerignore juga mendukung ignore folder atau menggunakan regular expression.
+
+                        vim .dockerignore
+                        text/*.txt             ##Menambah file world.txt ke folder hello di images yang akan dibuat. Lokasi folder text terletak sejajar dengan letak file Dockerfile disimpan.
+                        text/*.log
+                        text/sample.log
+                        text/temp
+
+   - EXPOSE           : Intruksi untuk memberitahu bahwa container akan melakukan listen port pada nomor dan protokol tertentu.
+                        Sebenarnya intruksi EXPOSE tidak akan mempublish port apapun, dia hanya digunakan sebagai dokumentasi untuk memberitahu yang akan membuat Docker Contaianer, bahwa Docker Image ini akan menggunakan port tertentu ketika dijalankan mejadi Docker Container.
+
+                        EXPOSE 8080           #defaultnya menggunakan TCP       
+                        EXPOSE 8080/tcp 
+                        EXPOSE 8080/udp
+
+   - ENV              : Intruksi untuk mengubah environment variable, baik itu ketika tahapan build ataupun ketika jalan dalam bentuk Docker Container.
+                        ENV yang sudah didefinisikan dalam Dockerfile bisa digunakan kembali dengan menggunakan sintaks ${NAMA_ENV}.
+
+                        ENV APP_PORT=8080     #ketika membuat Docker Container, jiks APP_PORT tidak diisi, dia akan secara default menggunakan port 8080
+                        EXPOSE ${APP_PORT}
+
+                        #check environment variable apa saja yang bisa diganti
+                        docker inspect raplimaulana/env
+                        
+                        #ganti environment tersebut pada saat membuat container
+                        docker container create --name contohenv --env APP_PORT=8081 -p 9090:8081 raplimaulana/env        #mengganti port 8080 menjadi port 8081
+
+   - VOLUME           : Intruksi untuk membuat volume secara otomatis ketika membuat Docker Container.
+                        Semua file yang terdapat di volume, secara otomatis akan di copy ke Docker Volume. Walaupun kita tidak membuat Docker Volume ketika membuat Docker Containernya.
+
+                        VOLUME /logs           #membuat volume baru di folder /logs (namanya dibuat acak)
+                        
+   - WORKDIR          : Intruksi untuk menentukan direktori/folder untuk menjalankan intruksi RUN, CMD, COPY dan ADD.
+                        Jika WORKDIR tidak ada, maka secara otomatis direktorinya akan dibuat. Setelah kita menentukan lokasi WORKDIR-nya, direktori tersebut  dijadikan tempat menjalankan intruksi selanjutnya.
+                        Jika lokasi WORKDIR adalah relative path (subfolder), maka secara otomatis dia akan masuk ke direktori dari WORKDIR sebelumnya.
+                        WORKDIR juga bisa digunakan sebagai path untuk lokasi pertama kali ketika kita masuk ke dalam Docker Container.
+
+                        WORKDIR /app           #working directory-nya di folder /app           *absolute path
+                        WORKDIR docker         #working directory-nya di folder /app/docker    *relative path
+                        WORKDIR /home/app      #working directory-nya di folder /home/app      *relative path
+
+                        *WORKDIR /app setara dengan RUN mkdir /app
+                        *Biasanya pada CMD menjalankan CMD go run app/main.go, sekarang hanya CMD go run main.go.
+                        *Waktu menjalankan docker exec -i-t, secara otomatis akan langsung masu ke folder /app
+
+   - USER             : Intruksi untuk mengubah user atau user group ketika Docker Image dijalankan.
+                        Secara default, Docker akan menggunakan user root. Namun pada beberapa kasus, mungkin ada aplikasi yang tidak ingin jalan dalam user root. Kita bisa mengubahnya dengan instruksi USER.
+
+                        RUN addgroup -S pzngroup
+                        RUN adduser -S -D -H /app pznuser pzngroup
+                        RUN chown -R  pznuser:pzngroup /app
+
+                        USER pznuser
+
+                        *Pastikan user yang dimasukan sudah masuk ke dalam group Docker.
+
+  - ARG               : Intruksi untuk mendefinisikan variable yang bisa digunakan oleh pengguna untuk dikirim ketika melakukan proses docker build menggunakan perintah --build-arg key=value.
+                        ARG hanya digunakan pada saat proses docker build, berbeda dengan ENV yang bisa digunakan ketika berjalan dalam Docker Container.
+                        Cara mengkases variable ARG sama seperti mengakses variable dari ENV. Menggunakan ${VARIABLE_NAME}.
+                        Cocok untuk membuat image tapi bisa dirubah-rubah cara build-nya.
+
+                        ARG app=main                        #ketika membuat Docker Container, jiks app tidak diisi, dia akan secara default berisi main
+                        ENV 
+
+                        RUN app/main.go app/${app}.go
+
+                        ENV app=${app}                      #agar variabel ARG pada docker build, dapat digunakan ENV pada Docker Container 
+                        CMD go run app/${app}.go            
+
+                        docker build -t raplimaulana/arg Argument --build-arg app=pzn
+
+  - HEALTHCHECK       : Intruksi untuk memberi tahu Docker bagaimana mengecek apakah Container masih berjalan dengan baik atau tidak.
+                        Jika terdapat HEALTHCHECK, secara otomatis Container akan memiliki status health. Pada awalnya bernilai "starting", jika suskes bernilai "healty", dan jika gagal bernilai "unhealty".
+
+                        HEALTHCHECK NONE                                   #jika tidak menambahkan perintah HEALTHCHECK, default-nya adalah none 
+                        HEALTHCHECK [OPTION] CMD curl http://localhost     #perintah CMD-nya akan dilakukan pengecekan atau healthcheck
+                        
+                        *OPTION = --interval=DURATION (default:30s)        #perintah CMD harus dieksekusi setiap 30 detik sekali, jka tidak dianggap gagal (unhealty) 
+                                  --timeout=DURATION (default:30s)         #maksimal timeout perintah pada CMD adalah 30 detik. Jika masih belum selesai, maka dianggap gagal (unhealty)
+                                  --start-period=DURATION (default:0s)     #pada saat aplikasi/container berjalan, apakah akan langsung di lakukan health check atau ada jeda beberapa detik. Default 0 = langsung dicek
+                                                                           #beberapa aplikasi membutuhkan waktu sebelum melakukan starting. Jadi tidak disarankan untuk menggunakan nilai 0
+                                  --retries=N(default:3)                   #Pada saat menjalan perintah CMD, maksimal errornya adalah 3x. Jika lebih, maka dianggap gagal (unhealty)
+                        
+  - ENTRYPOINT        : Intruksi untuk menentukan executable file yang akan dijalankan.
+                        Biasanya ENTRYPOINT itu erat kaitannya dengan CMD.
+                        Saat kita membuat intruksi CMD tanpa executable file, secara otomatis CMD akan menggunakan ENTRYPOINT.
+
+                        ENTRYPOINT ["executable","param1","param2"] 
+
+                        RUN mkdir /app/
+                        COPY main.go /app/
+
+                        ENTRYPOINT ["go", "run", "/app/main.go"]                           #ENRTRYPOINT mengeksekusi "go run /app/main.go" 
+
+                        ENTRYPOINT ["go", "run"]                                           #ENRTRYPOINT mengeksekusi "go run" 
+                        CMD ["/app/main.go"]                                               #saat menggunakan CMD, parameter "/app/main.go" akan dikirim ke ENTRPOINT. ENTRYPOINT jadi mengakses "go run /app/main.go"
+                                                               
+                        *ENTRYPOINT juga dapat digunakan pada saat menjalankan container
+                        ENTRYPOINT ["nginx]
+                        
+                        docker container run --name nginx-version dockerfile-example -v    #setara nginx -v
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

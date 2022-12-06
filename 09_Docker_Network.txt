@@ -1,0 +1,76 @@
+### DOCKER NETWORK ###
+Secara default container akan saling terisolasi satu sama lain.
+Docker memiliki fitur network untuk membuat jaringan di dalam docker agar setiap container dapat berkomunikasi satu sama lain.
+Jika beberapa container terdapat pada satu network yang sama, maka secara otomatis container tersebut bisa saling berkomunikasi.
+
+
+
+
+
+
+### NETWORK DRIVER ###
+Saat membuat network di docker, perlu ditentukan network drivernya terlebih dahulu.
+
+----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+ PARAMETER      |              Keterangan                                                                                                                                                                                               | 
+----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+Bridge          | The default network driver.                                                                                                                                                                                           |
+                | If you don’t specify a driver, this is the type of network you are creating.                                                                                                                                          |
+                | Bridge networks are usually used when your applications run in standalone containers that need to communicate.                                                                                                        |
+----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+Hosts           | For standalone containers.                                                                                                                                                                                            |
+                | Remove network isolation between the container and the Docker host, and use the host’s networking directly. See use the host network.                                                                                 |
+----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+Overlay         | Overlay networks connect multiple Docker daemons together and enable swarm services to communicate with each other.                                                                                                   |
+                | You can also use overlay networks to facilitate communication between a swarm service and a standalone container, or between two standalone containers on different Docker daemons.                                   |
+                | Overlay networks connect multiple Docker.                                                                                                                                                                             |
+----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+Macvlan         | Macvlan networks allow you to assign a MAC address to a container, making it appear as a physical device on your network. The Docker daemon routes traffic to containers by their MAC addresses.                      |                                      
+                | Using the macvlan driver is sometimes the best choice when dealing with legacy applications that expect to be directly connected to the physical network, rather than routed through the Docker host’s network stack. |
+----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+None            | For this container, disable all networking.                                                                                                                                                                           |          
+                | Usually used in conjunction with a custom network driver. none is not available for swarm services.                                                                                                                   |
+----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+Network Plugins | You can install and use third-party network plugins with Docker.                                                                                                                                                      |
+                | These plugins are available from Docker Hub or from third-party vendors.                                                                                                                                              |    
+----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+
+
+*Bridge networks     = Best when you need multiple containers to communicate on the same Docker host. 
+                       Host networks are best when the network stack should not be isolated from the Docker host, but you want other aspects of the container to be isolated.
+ Host network        = Best when you need container use same network as docker host. For linux OS only.
+ Overlay networks    = Best when you need containers running on different Docker hosts to communicate, or when multiple applications work together using swarm services.
+ Macvlan networks    = Best when you are migrating from a VM setup or need your containers to look like physical hosts on your network, each with a unique MAC address.
+ Network plugins     = Allow you to integrate Docker with specialized network stacks.
+
+
+##list all network
+docker network ls
+
+##create network
+docker network create --driver bridge mongonetwork
+
+##add container to network
+docker network connect mongonetwork mongodb
+
+##delete network
+docker container remove nginxbaru                #harus dihapus dulu container yang terhubung ke network yang akan dihapus
+docker network rm mongonetwork
+
+##delete container from network
+docker network disconnect mongonetwork mongodb 
+
+##add container to network
+container bisa saling terhubung dengan menyebutkan hostname dari containernya (nama container).
+
+#create network 
+docker network create --driver bridge mongonetwork 
+
+#create container
+docker container create --name mongodb --network mongonetwork --env MONGO_INITDB_ROOT_USERNAME:rapli --env MONGO_INITDB_ROOT_PASSWORD:rapli123 mongo:latest
+docker container create --name mongodbexpress --network mongonetwork --publish 8081:8081 --env ME_CONFIG_MONGODB_URL:mongodb://rapli:rapli123@mongodb:27017/ mongo-express:latest
+
+*rapli = user login database mongo  
+ rapli123 = password user login database mongo
+ @mongodb = host/nama container lain
+ 27017 = port container (bukan yang di publish port forwarding) 

@@ -1,0 +1,115 @@
+### PORTAINER ###
+Portainer is a universal container management tool that can work with both Docker and Kubernetes to make the deployment and management of containerized applications and services easier and more efficient. 
+Portainer enjoys over 650,000 users and 21,700 GitHub stars, so it’s widely used and popular.
+
+Portainer is a lightweight management UI which allows you to easily manage your different Docker environments (Docker hosts or Swarm clusters). 
+Portainer is meant to be as simple to deploy as it is to use. It consists of a single container that can run on any Docker engine (can be deployed as Linux container or a Windows native container, supports other platforms too). 
+Portainer allows you to manage all your Docker resources (containers, images, volumes, networks and more) ! It is compatible with the standalone Docker engine and with Docker Swarm mode.
+
+Why Portainer?
+
+Portainer's intuitive UI and codified best practices helps organizations to adopt containers quickly and efficiently.
+•	Reduce the operational complexity associated with multi-cluster management
+•	Bridge the skills gap and facilitate feature discovery and learning with an intuitive UI
+•	Codify cloud-native best practices with design templates and default configurations
+•	Consistently apply and centrally manage access, permissions and activity logging
+•	Portainer's multi-cluster, multi-cloud container management platform supports Docker, Swarm, Nomad, and Kubernetes running in any Data Center, Cloud, Network Edge or IoT Device.
+
+
+##install Portainer and configuration
+1. Install Portainer In Node01 (Swarm manager)                 #Execute in pod-raplima-node01 (10.10.10.10)
+   apt update && apt upgrade -y
+   docker volume create portainer_data
+   docker run -d -p 8000:8000 -p 9000:9000 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest
+
+2. Access Portainer Dashboard                                  #Note: You Need Tunneling First
+   ssh -l student labX.adinusa.id -PYYYY -D [socks-port]
+   http://10.10.10.10:9000
+
+3. Connect Portainer agent Node02 to Portainer dashboard
+   •   Access Portainer dashboard trough SSH tunnel
+   •   Click menu Environments -> Add environmets
+   •   Select Docker -> Start Wizard
+   •   Select Agent -> Copy command to run in node01
+
+4. Deploy Portainer agent to connect Node02 in Portainer dashboard
+   docker network create --driver overlay portainer_agent_network
+   docker service create \
+    --name portainer_agent \
+    --network portainer_agent_network \
+    -p 9001:9001/tcp \
+    --mode global \
+    --constraint 'node.platform.os == linux' \
+    --mount type=bind,src=//var/run/docker.sock,dst=/var/run/docker.sock \
+    --mount type=bind,src=//var/lib/docker/volumes,dst=/var/lib/docker/volumes \
+    portainer/agent:2.15.0
+
+5. Back to Portainer dashboard
+   •   Fill The NAME Column with hostname node02 pod-raplima-node02
+   •   Fill The Environment URL with ip address node02 10.10.10.20:9001
+   •   Click Finish
+
+6. To ensure node02 successfully connected, back to menu Home You Will See another Another Environment has added
+
+
+##running container from Portainer
+1. Access Portainer dashboard trough SSH tunnel
+   http://10.10.10.10:9000
+
+2. Running Container
+   •   Select Home -> node02
+   •   Click Containers -> + Add Container
+   •   Fill the name Column with raplima-web
+   •   Fill the Image Coloumn with nginx:latest
+   •   Click Publish a new network port -> Fill host coloumn 8080 and container coloumn 80
+   •   Click Deploy the Container
+
+3. There will be a notification on the top right side after deploying the container, the results can be seen from the Containers menu.
+
+4. We can check the logs from container, Inspect container, Stats Container, Access Console Container From Quick Actions Menu
+
+5. Access the container
+   http://10.10.10.20:8080
+
+
+##build & push image from Portainer
+1. Create image from Dockerfile
+   •   Cick Menu Image -> + Build a new Image
+   •   Fill name coloumn with raplima/nginx:lab76
+   •   Select build method to Web Editor
+   •   Create Dockerfile;
+       FROM training.btech.id/btacademy/nginx:latest
+       ARG USERNAME=raplima
+       RUN echo "nginx running on image $USERNAME/nginx:latest" > /usr/share/nginx/html/index.html
+       EXPOSE 80
+   •   Deployment to pod-raplima-node01
+   •   Click Build the image -> see the output
+   •   Check the image in menu Images
+
+2. Push Image to Harbor
+   •   Click menu Registries -> Add registry
+   •   In menu registry provider -> Select custom registry
+       •   Name: harbor-btech-academy
+       •   Registry URL: training.btech.id/btacademy
+       •   Username: btacademy
+       •   Password: pyR$2YM#AB5V
+    
+   •   Click Add Registry
+   •   Back to Images, Open the previously created image
+   •   in Registry coloumn select harbor-btech-academy
+   •   In Image coloumn fill with raplima/nginx:lab76 -> Click Tag
+   •   Select Push to Registry
+   •   Check the image if already pushed in harbor dashboard / try to pull the image
+
+3. Push Image to Docker Hub
+   •   Click menu Registries -> Add registry
+       •   Name: repo-username adinusa
+       •   Username: {username docker}
+       •   Password: {password docker}
+   •   Click Add Registry
+   •   Back to Images, Open the previously created image
+   •   In Registry coloumn select repo-username adinusa
+   •   In Image coloumn fill with {username docker}/nginx:lab76 -> Click Tag
+   •   Select Push to Registry
+   •   Check the image if already pushed in docker hub dashboard / try to pull the image
+

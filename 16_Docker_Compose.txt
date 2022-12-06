@@ -1,0 +1,479 @@
+### DOCKER COMPOSE ###
+The key difference between the Dockerfile and docker-compose is that the Dockerfile describes how to build Docker images, while docker-compose is used to run Docker containers.
+
+Docker compose adalah tool yang digunakan untuk mendefinisikan dan menjalankan multiple Docker Container secara sekaligus.
+Docker Compose menggunakan file YAML untuk melakukan konfigurasi Docker Container-nya.
+Dengan sebuah perintah, kita bisa membuat semua Docker Container dan menjalankannya sekaligus dari file konfigurasi tersebut. Sehingga tidak perlu lagi mengetikan perintah docker create secara manual ketika ingin membuat Docker Container.
+
+Docker Compose menyimpan konfigurasi nya dalam bentuk file YAML : https://yaml.org/ 
+File YAML mirip JSON, namun lebih sederhana. Biasanya file konfigurasinya disimpan dalam file bernama docker-compose.yaml
+Nama project secara default akan menggunakan nama folder lokasi docker-compose.yaml tersebut berada
+
+Fitur Docker Compose:
+1. Memiliki multiple isolated environment dalam satu docker host/server (atau biasa dibilang project), sehingga dapat membuat banyak sekali jenis environment dalam satu Docker Compose.
+2. Hanya membuat container yang berubah. Docker Compose bisa mendeteksi container mana yang harus dibuat dan tidak perlu dibuat ulang dari perubahan file konfigurasi.
+3. Secara default nama project akan menggunakan nama file konfigurasi. 
+
+Kapan harus menggunakan Docker Compose?
+1. Membuat Development Environment. 
+   Ketika kita develop aplikasi, kita sering butuh tool-tool berbeda untuk tiap project. Kita bisa gunakan Docker Compose untuk melakukan setup nya
+2. Automated Testing. 
+   Kadang ketika kita membuat automation testing, banyak sekali hal yang harus kita jalankan secara manual. Docker Compose bisa membantu kita untuk otomatisasi proses setup nya
+3. Deployment. 
+   Docker Compose juga bisa digunakan untuk kasus deployment aplikasi kita. Jadi kita tidak perlu lakukan start manual aplikasi kita di server, cukup jalankan menggunakan Docker Compose
+
+
+##membuat konfigurasi container
+#Pada file YAML, kita bisa tambahkan bagian services untuk menentukan containernya.
+#Dalam service tersebut, kita bisa tentukan container name dan image untuk docker container yang akan kita buat.
+vim docker-compose.yaml
+
+version: "3.8"
+
+services: 
+  nginx-example:                            #key dari container-nya (harus bersifat unik), biasanya sama kayak nama container 
+    container_name: nginx-example
+    image: nginx:latest
+
+  nginx-example2:                            
+    container_name: nginx-example2
+    image: nginx:latest
+
+#Setelah membuat konfigurasi file, container tidak langsung jadi. Kita harus membuatnya dengan perintah docker compose
+docker compose create 
+
+*jika image "nginx-example" sudah ada, maka ketika menjalankan docker compose create, iamge "nginx-example" tidak akan dibuat ulang
+
+##menjalankan container
+docker compose start
+
+##membuat container + menjalankan container secara langsung
+docker compose up
+
+##membuat scalling beberapa container
+services:
+  nginx-example:                            
+    container_name: nginx-example
+    ports:
+      - 3000                                #listing port hostnya di kosongkan agar dibuat nanti secara otomatis pada saat scalling 
+
+docker compose up --scale nginx-example=3             #memuat 3 container sekaligus dari satu image, nginx-example adalah nama containernya di bagian services
+
+##melihat container 
+docker compose ps
+
+*docker container ls menampilkan semua container yang dibuat, baik secara manual ataupun dengan docker compose.
+
+##menghentikan container
+docker compose stop
+
+##menghapus container
+docker compose down
+
+##project name
+Secara default nama projectnya adalah nama folder lokasi file docker-compose.yaml disimpan.
+Melihat project yang berjalan gunakan perintah:
+
+docker compose ls
+
+
+##service
+Dalam konfigurasi Docker Compose, container disimpan dalam konfigurasi bernama services.
+Kita bisa menambahkan satu atau lebih services dalam konfigurasi file-nya.
+
+versiom: "3.9"
+
+services: 
+
+  #This is example of nginx
+  nginx-example:
+    image: nginx:latest
+    container_name: nginx-example
+
+  #This is example of mongodb   
+  mongodb-example:
+    image: mongodb:latest
+    container_name: mongodb-example
+
+
+##expose port
+1. Short syntax.
+   Berisi string port HOST:Container
+
+   version: "3.9"
+
+   services:
+     nginx-port1:
+     image: nginx:latest
+     container_name: nginx-port1
+     ports:
+       - "8080:80"                     #menggunakan port 8080 di host (laptop) untuk di forward ke port 80 di container.
+
+2. Long syntax.
+   Dibuat dalam bentuk object yang berisi:
+   - target: port didalam container
+   - published: port yang digunakan di host
+   - protocol: protocol port (TCP atau UDP)
+   - mode: host untuk port di tiap node atau ingress untuk swarm mode. Karena tidak menggunakan Docker Swarm, jadi isi saja dengan host.
+
+   version: "3.9"
+
+   services:
+     nginx-port2:
+       image: nginx:latest
+       container_name: nginx-port2
+       ports: 
+         - protocol: tcp
+           published: 8081
+           target: 80
+
+
+##environment variable
+version: "3.9"
+
+services:
+mongodb-example: 
+  image: mongo:latest
+  container_name: mongodb-example
+  ports:
+  - "27017:27017"
+  environment:
+    MONGO_INITDB_ROOT_USERNAME: rapli
+    MONGO_INITDB_ROOT_PASSWORD: rapli123
+    MONGO_INITDB_DATABASE: admin
+
+
+##bind mount
+1. Short syntax.
+   Berisi string SOURCE:TARGET:MODE         #SOURCE = localhost, TARGET = lokasi container, MODE = mode bind mount, default rw (read & write)
+   
+   version: "3.9"
+   
+   services:
+     mongodb1:
+       image: mongo:latest
+       container_name: mongodb1
+       ports: 
+       - "27017:27017"
+       environment:
+         MONGO_INITDB_ROOT_USERNAME: rapli
+         MONGO_INITDB_ROOT_PASSWORD: rapli123
+         MONGO_INITDB_DATABASE: admin 
+       volumes:
+       - "./data-mongo1:/data/db"
+
+2. Long sysntax.
+   Dibuat dalam bentuk nested object yang berisi:
+   - type: tipe mount, volume atau bind
+   - source: sumber path di host
+   - target: target path di container
+   - read_only: default false yang berarti read & write
+
+   version: "3.9"
+
+   services: 
+     mongodb2:
+       image: mongo:latest
+       container_name: mongodb2
+       ports: 
+         - "27018:27017"
+       environment: 
+         MONGO_INITDB_ROOT_USERNAME: rapli
+         MONGO_INITDB_ROOT_PASSWORD: rapli123
+         MONGO_INITDB_DATABASE: admin 
+       volumes: 
+         - type: bind
+           source:"./data-mongo2"
+           target: "/data/db"
+           read_only: false
+
+
+##volume
+untuk menggunakan volume, caranya sama dengan bind mount, hanya saja pada bagian TYPE diganti dengan volume dan SOURCE diganti dengan nama volume
+
+version: "3.9"
+
+services: 
+  mongodb2:
+    image: mongo:latest
+    container_name: mongodb2
+    ports: 
+    - "27019:27017"
+    environment: 
+      MONGO_INITDB_ROOT_USERNAME: rapli
+      MONGO_INITDB_ROOT_PASSWORD: rapli123
+      MONGO_INITDB_DATABASE: admin
+    volumes: 
+      type: volume
+      source: mongo-data2
+      target: "/data/db
+      read_only: false
+
+volumes: 
+  mongo-data1:
+    name: mongo-data1
+  mongo-data2:
+    name: mongo-data2
+
+*saat melakukan docker compose down, volume tidak akan terhapus.
+
+
+##network 
+Saat menjalankan file menggunakan Docker Compose, secara default semua container akan dihubungkan dalam sebuah network bernama nama-project_default.
+Jadi sebenarnya kita tidak perlu membuat network secara manual.
+
+version: "3.9"
+
+services: 
+  mongodb-example:
+    image: mongo:latest
+    container_name: mongodb-example
+    ports: 
+      - "27107:27107"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: rapli
+      MONGO_INITDB_ROOT_PASSWORD: rapli123
+      MONGO_INITDB_DATABASE: admin
+    networks: 
+      - network-example
+
+networks:
+  network-example:
+    name: network-example
+    driver: bridge
+
+
+##depends on
+Terkadang kita membuat sebuah Container yang membutuhkan Container lain untuk berjalan.
+Secara default Docker Compose akan menjalankan semua container secara bersamaan, tanpa ada urutan pasti.
+Kita bisa membuat urutan menjalankan container dan menyebutkan bahwa container tersebut hanya bisa berjalan apabila container yang lain sudah berjalan.
+Kita bisa menyebutkan satu atau lebih container lainnya pada depends_on
+
+version: "3.8"
+
+services:
+    mongodb-example: 
+      image: mongo:latest
+      container_name: mongodb-example
+      ports:
+        - "27017:27017"
+      environment: 
+        MONGO_INITDB_ROOT_USERNAME: raplidocker
+        MONGO_INITDB_ROOT_PASSWORD: rapli123
+        MONGO_INITDB_DATABASE: admin
+      networks: 
+        - network-example
+
+    mongodb-express-example:
+      image: mongo-express:latest
+      container_name: mongodb-express-example
+      depends_on: 
+        - mongodb-example                                         #pake ID container, bukan nama container. Kebetulan saat ini nama dan ID containernya sama.
+      ports:
+        - "8081:8081"
+      environment:
+        ME_CONFIG_MONGODB_ADMINUSERNAME: rapli
+        ME_CONFIG_MONGODB_ADMINPASSWORD: rapli123
+        ME_CONFIG_MONGODB_SERVER: mongodb-example                  #lokasi servernya (conainer yang diinstall mongodb)
+      networks:
+        - network-example                                       
+
+networks:
+  network-example:
+    name: network-example
+    driver: bridge
+
+*Pada saat menjalankan Docker Compose ini, container mongo express tidak akan bisa langsung berjalan dan berhenti karena container mongodb yang di depend-on membutuhkan waktu beberapa menit untuk menyiapkan databasenya.
+ Sehingga container mongo express perlu dijalankan kembali secara manual setelah container mongodb sudah siap.
+
+
+##restart
+Secara default pada saat container mati, maka Docker tidak akan menjalankan lagi containernya. Kita harus menjalankan container tersebut secara manual.
+Atribut restart dapat dibuat dalam bentuk object yang berisi:
+- no: defaultnya tidak pernah restart
+- always: selalu restart jika container mati
+- on-failure: restart jika container error dengan indikasi error ketika exit
+- unless-stopped: selalu restart container setiap dia mati, kecuali dihentikan secara manual
+
+
+version: "3.8"
+
+services:
+    mongodb-example: 
+      image: mongo:latest
+      container_name: mongodb-example
+      ports:
+        - "27017:27017"
+      environment: 
+        MONGO_INITDB_ROOT_USERNAME: raplidocker
+        MONGO_INITDB_ROOT_PASSWORD: rapli123
+        MONGO_INITDB_DATABASE: admin
+      networks: 
+        - network-example
+
+    mongodb-express-example:
+      image: mongo-express:latest
+      container_name: mongodb-express-example
+      restart: always
+      depends_on: 
+        - mongodb-example                                         #pake ID container, bukan nama container. Kebetulan saat ini nama dan ID containernya sama.
+      ports:
+        - "8081:8081"
+      environment:
+        ME_CONFIG_MONGODB_ADMINUSERNAME: rapli
+        ME_CONFIG_MONGODB_ADMINPASSWORD: rapli123
+        ME_CONFIG_MONGODB_SERVER: mongodb-example                  #lokasi servernya (conainer yang diinstall mongodb)
+      networks:
+        - network-example                                       
+
+networks:
+  network-example:
+    name: network-example
+    driver: bridge
+
+
+##monitor Docker Event 
+docker events
+docker events --filter 'container=mongodb-express-example'
+
+
+##resource limit
+Kita bisa menggunakan file konfigurasi Docker Compose untuk mengatur resource limit untuk CPU dan memory dari tiap container yang akan dibuat.
+Kita bisa menggunakan attribute deploy, lalu di dalamnya menggunakan attribute resources. Di dalam attribute resource ini, kita bisa menentukan limits dan reservations.
+Reservations adalah resource yang dijamin yang bisa digunakan oleh container, sedangkan limits merupakan limit maksimal untuk resource yang diberikan ke container.
+
+*limit yang di setting pada file konfigurasi Docker Compose bisa rebutan dengan container lain
+
+version: "3.9"
+
+services: 
+  nginx-example:
+    image: nginx:latest
+    container_name: nginx-example
+    ports:
+      - "8080:80"
+    deploy: 
+      resources:
+        reservations:
+          cpus: "0.25"
+          memory: 50M
+        limits: 
+          cpus: "0.5"
+          memory: 100M
+
+*check dengan docker container stats
+
+
+##Dockerfile 
+Sebelumnya kita selalu membuat container dari image yang sudah ada.
+Docker Compose juga bisa digunakan untuk membuat container dari Dockerfile yang kita buat. Hal ini mempermudah kita sehingga tidak perlu untuk membuat imagenya terlebih dahulu secara manual.
+
+#build
+ketika ingin membuat container dari Dockerfile, kita tidak menggunakan attribute image lagi di services-nya
+Atribut build dapat dibuat dalam bentuk object yang berisi:
+- context: berisi path ke file Dockerfile
+- dockerfile: nama file Dockerfile, bisa diganti jika mau
+- args: argument yang dibutuhkan ketika melakukan docker build
+
+version: "3.8"
+
+services: 
+  app:
+    container_name: app
+    build: 
+      context: "./app"
+      dockerfile: Dockerfile
+    image: "app-golang:1.0.0"                            #bukan download image, tapi berisi hasil akhir image setelah proses pembuatan image docker yang disimpan dengan nama app-golang:1.0.0
+    environment:
+      - "APP_PORT=8080"                                  #pada filde Dockerfile terdapat environment APP_PORT
+    ports:
+      - "8080:8080"
+
+*jika ingin melakukan build image saja (seperti docker create image) gunakan perintah:
+ docker compose build
+
+*jika ingin melakukan build image + create container gunakan perintah:
+ docker compose create
+
+*perlu diingat, ketika kita mengubah kode program, lalu kita coba stop dan start ulang container menggunakan Docker Compose, bukan berarti kode program terbaru akan berjalan
+ Hal ini karena image versi baru otomatis terbuat, sehingga jika kita kita ingin menggunakan image versi baru, kita harus hapus dulu container dan imagenya, lalu buat ulang dengan image baru
+
+
+##Health Check
+Secara default container yang dibuat (secara manual ataupun menggunakan Docker Compose), pasti akan selalu menggunakan Health Check yang dibuat di Dockerfile.
+Namun, jika kita ingin mengubah Health Check tersebut, itu juga bisa kita lakukan dengan menambahkan attribute berikut di services:
+- test: berisikan cara melakukan test health check
+- interval: interval melakukan health check
+- timeout: timeout melakukan health check
+- retries: total retry ketika gagal
+- start_period: waktu mulai melakukan health check
+
+*Hampir mirip dengan ketika kita membuat Health Check di Dockerfile
+
+version: "3.8"
+
+services: 
+  app:
+    container_name: app
+    build: 
+      context: "./app"
+      dockerfile: Dockerfile
+    image: "app-golang:1.0.0"                 
+    environment:
+      - "APP_PORT=8080"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+##masalah banyak file konfigurasi
+Saat membuat aplikasi menggunakan Docker, kadang kita ingin menjalankan aplikasi tersebut ke beberapa server. Baik itu di local laptop, di server development, atau server production
+Kadang ada kalanya beberapa hal berbeda, misal konfigurasi environment nama user, password dan nama database.
+Pada kasus ini, mau tidak mau kita harus membuat banyak file konfigurasi Docker Compose, misal untuk di local, di development dan di production
+
+#Extend Service
+Docker Compose memiliki fitur bernama extend service, dimana kita bisa melakukan merge beberapa file konfigurasi sekaligus
+Dengan begitu, kita bisa membuat file konfigurasi umum, dan spesial untuk setiap jenis environment misalnya
+Saat menjalankan Docker Compose, kita bisa gunakan perintah -f namafile.yaml jika ingin menggunakan nama file yang bukan docker-compose.yaml
+
+Cara biasa:
+1. copy semua isi docker-compose.yaml ke production.yaml
+2. docker compose -f production.yaml create
+   docker compose -f production.yaml start
+
+karena ribet, bisa menggunakan Extend Service
+
+vim production.yaml
+
+version: "3.8"
+
+services: 
+  app:
+    environment:
+      - "MODE=dev"
+
+
+vim development.yaml
+
+version: "3.8"
+
+services: 
+  app:
+    environment:
+      - "MODE=dev"
+
+
+docker compose -f docker-compose.yaml -f production.yaml create              #docker-compose.yaml = yang umumnya/default (local), production.yaml = yang khususnya
+docker compose -f docker-compose.yaml -f production.yaml start
+
+docker compose -f docker-compose.yaml -f development.yaml create             
+docker compose -f docker-compose.yaml -f development.yaml start
+
+
+
+
+

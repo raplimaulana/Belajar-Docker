@@ -1,0 +1,40 @@
+##Kalo waktu akses docker via wsl ada error "https://www.digitalocean.com/community/questions/how-to-fix-docker-got-permission-denied-while-trying-to-connect-to-the-docker-daemon-socket...", add user ke group docker
+sudo groupadd docker
+sudo usermod -aG docker ${USER}
+su -s ${USER}
+
+##download docker
+apt -y update
+apt -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add –
+apt-key fingerprint 0EBFCD88
+add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+apt -y update
+apt -y install docker-ce docker-ce-cli containerd.io
+
+##check docker after installation
+systemctl status docker
+
+##add user into docker group, for user runnning docker without sudo 
+groupadd docker
+sudo usermod -aG docker ${USER}
+
+##download docker image
+docker image pull redis:latest
+
+*download image redis dari docker repository versi terbaru
+
+##delete docker image
+docker image rm redis:latest
+
+##delete all image that are not used by container
+docker image prune
+
+##list all docker images
+docker image ls
+
+##display images description
+docker image inspect redis:latest
+
+
+

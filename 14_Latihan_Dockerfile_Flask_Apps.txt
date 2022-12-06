@@ -1,0 +1,54 @@
+##create directory
+mkdir latihan02
+cd latihan02
+
+
+
+##create file flask
+vim app.py
+
+from flask import flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello_world():
+    return "Hey, we have Flask in a docker container!"
+
+if __name__ == "__main__"
+    app.run(debug=True, host="0.0.0.0")
+
+
+
+##create file requirements.txt
+vi requirements.txt
+
+Flask==0.10.1
+Werkzeug==1.0.0
+Jinja2==2.8.1
+MarkupSafe==1.1.1
+itsdangerous==1.1.0
+
+
+
+##create Dockerfile
+FROM ubuntu:16.04
+
+RUN apt-get update -y && apt-get install python-pip python-dev -y
+COPY ./requirements.txt /app
+COPY . /app
+
+WORKDIR /app
+RUN pip install -r requirements.txt
+
+ENTRYPOINT ["python"]
+CMD ["app.py"]
+
+
+
+##build image from Dockerfile
+docker build -t flask-latihan02 .
+
+##tag image
+docker tag flask-latihan02 raplimaulana/flask-latihan02:1.1
+

@@ -1,0 +1,16 @@
+#create directory
+mkdir latihan01
+cd latihan01
+
+#create docker file
+vim Dockerfile
+
+FROM docker/whalesay:latest
+RUN apt -y update && apt install -y fortunes          #update & install fortune
+CMD /usr/games/fortune -a | cowsay
+
+#build image from Dockerfile
+docker build -t docker-whale .
+
+
+
