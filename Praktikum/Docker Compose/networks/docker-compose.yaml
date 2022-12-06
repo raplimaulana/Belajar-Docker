@@ -1,0 +1,19 @@
+version: "3.9"
+
+services: 
+  mongodb-example:
+    image: mongo:latest
+    container_name: mongodb-example
+    ports: 
+      - "27107:27107"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: rapli
+      MONGO_INITDB_ROOT_PASSWORD: rapli123
+      MONGO_INITDB_DATABASE: admin
+    networks: 
+      - network-example
+
+networks:
+  network-example:
+    name: network-example
+    driver: bridge

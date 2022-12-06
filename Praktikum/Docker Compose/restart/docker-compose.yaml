@@ -1,0 +1,35 @@
+
+version: "3.8"
+
+services:
+    mongodb-example: 
+      image: mongo:latest
+      container_name: mongodb-example
+      ports:
+        - "27017:27017"
+      environment: 
+        MONGO_INITDB_ROOT_USERNAME: raplidocker
+        MONGO_INITDB_ROOT_PASSWORD: rapli123
+        MONGO_INITDB_DATABASE: admin
+      networks: 
+        - network-example
+
+    mongodb-express-example:
+      image: mongo-express:latest
+      container_name: mongodb-express-example
+      restart: always
+      depends_on: 
+        - mongodb-example                                         #pake ID container, bukan nama container. Kebetulan saat ini nama dan ID containernya sama.
+      ports:
+        - "8081:8081"
+      environment:
+        ME_CONFIG_MONGODB_ADMINUSERNAME: rapli
+        ME_CONFIG_MONGODB_ADMINPASSWORD: rapli123
+        ME_CONFIG_MONGODB_SERVER: mongodb-example                  #lokasi servernya (conainer yang diinstall mongodb)
+      networks:
+        - network-example                                       
+
+networks:
+  network-example:
+    name: network-example
+    driver: bridge
